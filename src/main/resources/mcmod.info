@@ -1,0 +1,18 @@
+{
+  "modListVersion": 2,
+  "modList": [{
+    "modid": "glassjaw",
+    "name": "Glass Jaw",
+    "description": "Makes sure armor-piercing effects pierce armor",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": [ "Falkreon" ],
+    "credits": "Made by Falkreon",
+    "logoFile": "",
+    "requiredMods": [ "forge" ],
+    "dependencies": [ ],
+    "useDependencyInformation": true
+  }]
+}
