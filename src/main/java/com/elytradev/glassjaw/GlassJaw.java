@@ -33,11 +33,16 @@ import org.apache.logging.log4j.Logger;
 import com.elytradev.glassjaw.countermeasures.AttackFixer;
 import com.elytradev.glassjaw.countermeasures.Draconic;
 import com.elytradev.glassjaw.countermeasures.ICountermeasure;
+import com.elytradev.glassjaw.item.ItemGlassDagger;
 
+import net.minecraft.item.Item;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 @Mod(modid=GlassJaw.MODID, version=GlassJaw.VERSION, name="Glass Jaw")
 public class GlassJaw {
@@ -45,6 +50,10 @@ public class GlassJaw {
 	public static final String VERSION = "@VERSION@";
 	
 	public static Logger LOG;
+	@SidedProxy(clientSide="com.elytradev.glassjaw.client.ClientProxy", serverSide="com.elytradev.glassjaw.Proxy")
+	public static Proxy PROXY;
+	
+	public static ItemGlassDagger GLASS_DAGGER;
 	
 	private static Map<String, ICountermeasure> availableMeasures = new HashMap<>();
 	private static Map<String, ICountermeasure> active = new HashMap<>();
@@ -85,6 +94,15 @@ public class GlassJaw {
 		} else {
 			LOG.info("No countermeasures activated! Going dormant.");
 		}
+		
+		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(PROXY);
+	}
+	
+	@SubscribeEvent
+	public void registerItems(RegistryEvent.Register<Item> event) {
+		GLASS_DAGGER = new ItemGlassDagger();
+		event.getRegistry().register(GLASS_DAGGER);
 	}
 	
 	/*//Disabled for now, but be warned: Tampering with event lists is mutually assured destruction.
