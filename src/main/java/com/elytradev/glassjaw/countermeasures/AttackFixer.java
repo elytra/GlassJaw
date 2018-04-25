@@ -22,36 +22,61 @@
  * SOFTWARE.
  */
 
-package com.elytradev.glassjaw;
+package com.elytradev.glassjaw.countermeasures;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-public class Draconic {
+public class AttackFixer implements ICountermeasure {
 	
 	@SubscribeEvent(priority=EventPriority.HIGHEST, receiveCanceled=true)
-	public static void onEntityAttack(LivingAttackEvent event) {
+	public void onEntityAttackHighest(LivingAttackEvent event) {
 		if (event.getEntityLiving().getEntityWorld().isRemote) return;
 		
 		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
-			System.out.println("Deploying countermeasures");
-			
-			for(ItemStack item : event.getEntityLiving().getArmorInventoryList()) {
-				if (item==null || item.isEmpty()) continue;
-				NBTTagCompound tag = item.getTagCompound();
-				if (tag==null) continue;
-				if (tag.hasKey("ProtectionPoints")) {
-					tag.setFloat("ProtectionPoints", 0);
-				}
-				
-				if (tag.hasKey("ShieldEntropy")) {
-					 tag.setFloat("ShieldEntropy", 0);
-				}
-			}
+			event.setCanceled(true); //Will be uncanceled later
 		}
 	}
 	
+	@SubscribeEvent(priority=EventPriority.LOWEST, receiveCanceled=true)
+	public void onEntityAttackLowest(LivingAttackEvent event) {
+		if (event.getEntityLiving().getEntityWorld().isRemote) return;
+		
+		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
+			event.setCanceled(false);
+		}
+	}
+	
+	@SubscribeEvent(priority=EventPriority.HIGHEST, receiveCanceled=true)
+	public void onEntityDeathHighest(LivingDeathEvent event) {
+		if (event.getEntityLiving().getEntityWorld().isRemote) return;
+		
+		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
+			event.setCanceled(true); //Will be uncanceled later
+		}
+	}
+	
+	@SubscribeEvent(priority=EventPriority.LOWEST, receiveCanceled=true)
+	public void onEntityDeathLowest(LivingDeathEvent event) {
+		if (event.getEntityLiving().getEntityWorld().isRemote) return;
+		
+		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
+			event.setCanceled(false);
+		}
+	}
+
+	@Override
+	public String getConfigName() {
+		return "attackfixer";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Generic AttackFixer";
+	}
+
+	@Override
+	public void enable() {}
 }

@@ -24,14 +24,18 @@
 
 package com.elytradev.glassjaw;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.elytradev.glassjaw.countermeasures.AttackFixer;
+import com.elytradev.glassjaw.countermeasures.Draconic;
+import com.elytradev.glassjaw.countermeasures.ICountermeasure;
+
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
@@ -42,21 +46,58 @@ public class GlassJaw {
 	
 	public static Logger LOG;
 	
+	private static Map<String, ICountermeasure> availableMeasures = new HashMap<>();
+	private static Map<String, ICountermeasure> active = new HashMap<>();
+	static {
+		register(new Draconic());
+		register(new AttackFixer());
+	}
+	
+	/**
+	 * If you really want, third parties can register any time by first using a Class.forName() check, probably even in
+	 * FMLConstructionEvent. However, it's better to just PR a countermeasure to this mod instead if you can.
+	 */
+	public static void register(ICountermeasure measure) {
+		if (availableMeasures.containsKey(measure.getConfigName())) throw new IllegalArgumentException("Can't re-register the countermeasure '"+measure.getConfigName()+"'.");
+		availableMeasures.put(measure.getConfigName(), measure);
+	}
+	
 	@Mod.EventHandler
 	public void onPreInit(FMLPreInitializationEvent event) {
 		LOG = LogManager.getLogger("GlassJaw");
+		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+		String[] countermeasures = config.getStringList("countermeasures", "general", new String[]{"attackfixer"}, "The list of countermeasures to enable. draconic may be less invasive than attackfixer, but attackfixer can fix unknown mods.", availableMeasures.keySet().toArray(new String[availableMeasures.size()]));
+		config.save();
 		
-		
-		List<String> active = new ArrayList<String>();
-		if (Loader.isModLoaded("draconicevolution")) {
-			active.add("Draconic Evolution");
-			MinecraftForge.EVENT_BUS.register(Draconic.class);
+		for(String key : countermeasures) {
+			ICountermeasure measure = availableMeasures.get(key);
+			if (measure==null) {
+				LOG.warn("Can't acquire a countermeasure for key \"{}\"! ");
+			} else {
+				measure.enable();
+				MinecraftForge.EVENT_BUS.register(measure);
+				active.put(measure.getConfigName(), measure);
+			}
 		}
 		
 		if (!active.isEmpty()) {
-			LOG.info("Active countermeasures: {}", active);
+			LOG.info("Active countermeasures: {}", active.keySet());
 		} else {
-			LOG.info("No applicable countermeasures found! Going dormant. Please report an issue if absolute damage isn't getting through.");
+			LOG.info("No countermeasures activated! Going dormant.");
 		}
 	}
+	
+	/*//Disabled for now, but be warned: Tampering with event lists is mutually assured destruction.
+	@Mod.EventHandler
+	public void onPostInit(FMLPostInitializationEvent event) {
+		try {
+			Field field = EventBus.class.getDeclaredField("listeners");
+			field.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			ConcurrentHashMap<Object, ArrayList<IEventListener>> listeners = (ConcurrentHashMap<Object, ArrayList<IEventListener>>) field.get(MinecraftForge.EVENT_BUS);
+			System.out.println(listeners.toString());
+		} catch (Throwable t) {
+			System.out.println("Unable to tamper with event listener priorities. ("+t.toString()+")");
+		}
+	}*/
 }
