@@ -26,6 +26,7 @@ package com.elytradev.glassjaw.countermeasures;
 
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -67,6 +68,24 @@ public class AttackFixer implements ICountermeasure {
 		}
 	}
 
+	@SubscribeEvent(priority=EventPriority.HIGHEST, receiveCanceled=true)
+	public void onGetHurtHighest(LivingHurtEvent event) {
+		if (event.getEntityLiving().getEntityWorld().isRemote) return;
+		
+		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
+			event.setCanceled(true);
+		}
+	}
+	
+	@SubscribeEvent(priority=EventPriority.LOWEST, receiveCanceled=true)
+	public void onGetHurtLowest(LivingHurtEvent event) {
+		if (event.getEntityLiving().getEntityWorld().isRemote) return;
+		
+		if (event.getSource().isDamageAbsolute() && event.getSource().isUnblockable()) {
+			event.setCanceled(false);
+		}
+	}
+	
 	@Override
 	public String getConfigName() {
 		return "attackfixer";
